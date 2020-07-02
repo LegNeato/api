@@ -41,17 +41,17 @@ pub struct User {
 // Define graphql schema for NewPackage
 #[derive(GraphQLInputObject)]
 #[graphql(description = "A nest.land package")]
-struct NewPackage {
-    name: String,
-    owner: String,
-    description: String,
-    repository: String,
-    latestVersion: String,
-    latestStableVersion: String,
-    packageUploadNames: Vec<String>,
-    locked: bool,
-    malicious: bool,
-    unlisted: bool,
+pub struct NewPackage {
+    pub name: String,
+    pub owner: String,
+    pub description: String,
+    pub repository: String,
+    pub latestVersion: String,
+    pub latestStableVersion: String,
+    pub packageUploadNames: Vec<String>,
+    pub locked: bool,
+    pub malicious: bool,
+    pub unlisted: bool,
 }
 
 // Define graphql schema for NewPackage
