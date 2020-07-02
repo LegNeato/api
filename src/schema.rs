@@ -93,7 +93,7 @@ impl MutationRoot {
         Ok(Package {
             name: new_package.name.to_owned(),
             normalizedName: new_package.name.to_owned(),
-            owner: new_package.normalizedName.to_owned(),
+            owner: new_package.owner.to_owned(),
             description: new_package.description.to_owned(),
             repository: new_package.repository.to_owned(),
             latestVersion: new_package.latestVersion.to_owned(),
