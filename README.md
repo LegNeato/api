@@ -1,4 +1,4 @@
-<img src="./images/cover.jpg">
+<img src="./assets/cover.jpg">
 
 # Nest API - Rust
 
