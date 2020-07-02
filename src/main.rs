@@ -57,9 +57,11 @@ pub struct OngoingUpload {
     done: bool,
 }
 
+impl actix_web::error::ResponseError for &str {}
+
 async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
     // iterate over multipart stream
-    let mut formValues = Vec::new();
+    let mut fields = HashMap::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_type = field.content_disposition().unwrap();
         let mime_type = field.content_type();
@@ -76,8 +78,8 @@ async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
             let data = chunk.unwrap();
             match filename {
                 None => {
-                    println!("{:?}", data);
-                    formValues.extend_from_slice(&data);
+                    println!("{:?}", content_type.get_name());
+                    fields.insert(content_type.get_name().unwrap(), data);
                 }
                 Some(n) => {
                     // filesystem operations are blocking, we have to use threadpool
@@ -86,7 +88,7 @@ async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
             }
         }
     }
-    let apiKey = formValues[0];
+    let apiKey = fields.get(&"apiKey").ok_or("invalid apikey")?;
     Ok(HttpResponse::Ok().into())
 }
 
