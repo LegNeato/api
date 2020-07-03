@@ -105,8 +105,11 @@ pub async fn create_user(db: Arc<Client>, newUser: NewUser) -> Result<User, Erro
 }
 
 // TODO: implement upload creation
-pub async fn create_package_uploads(db: Arc<Client>, package: NewPackage) -> Result<(), Error> {
+pub async fn create_package_uploads(db: Arc<Client>, package: NewPackage) -> Result<NewPackage, Error> {
+    let rows = &db
+        .query("INSERT INTO 'package-uploads' (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&newUser.name, &normalizedName, &newUser.password, &apiKey, &Array::<String>::from_vec(vec![], 0), &Utc::now()])
+        .await?;
     Ok(NewPackage {
-        
+
     })
 }
