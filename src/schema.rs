@@ -43,15 +43,14 @@ pub struct User {
 #[graphql(description = "A nest.land package")]
 pub struct NewPackage {
     pub name: String,
-    pub owner: String,
+    pub apiKey: String,
     pub description: String,
     pub repository: String,
-    pub latestVersion: String,
-    pub latestStableVersion: String,
-    pub packageUploadNames: Vec<String>,
-    pub locked: bool,
-    pub malicious: bool,
+    pub upload: bool,
+    pub entry: String,
+    pub stable: bool,
     pub unlisted: bool,
+    pub version: String,
 }
 
 // Define graphql schema for NewPackage
