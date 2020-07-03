@@ -1,6 +1,6 @@
 // Postgres database management for Nest API
 
-use crate::schema::{NewPackage, NewUser, Package, User};
+use crate::schema::{NewPackage, NewUser, Package, User, NewPackageResult};
 use crate::utils::{create_api_key, first, normalize};
 use chrono::{DateTime, Utc};
 use dotenv;
@@ -90,9 +90,10 @@ pub async fn get_user_by_key(db: Arc<Client>, apiKey: String) -> Result<User, St
 // Method to create a user
 pub async fn create_user(db: Arc<Client>, newUser: NewUser) -> Result<User, Error> {
     let apiKey = create_api_key();
+    let currTime = Utc::now();
     let normalizedName = normalize(&newUser.name);
     let rows = &db
-        .query("INSERT INTO users (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&newUser.name, &normalizedName, &newUser.password, &apiKey, &Array::<String>::from_vec(vec![], 0), &Utc::now()])
+        .query("INSERT INTO users (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&newUser.name, &normalizedName, &newUser.password, &apiKey, &Array::<String>::from_vec(vec![], 0), &currTime])
         .await?;
     let name = newUser.name;
     Ok(User {
@@ -100,16 +101,14 @@ pub async fn create_user(db: Arc<Client>, newUser: NewUser) -> Result<User, Erro
         normalizedName: normalizedName,
         apiKey: apiKey,
         packageNames: vec![],
-        createdAt: format!("{:?}", Utc::now()),
+        createdAt: format!("{:?}", currTime),
     })
 }
 
 // TODO: implement upload creation
-pub async fn create_package_uploads(db: Arc<Client>, package: NewPackage) -> Result<NewPackage, Error> {
-    let rows = &db
-        .query("INSERT INTO 'package-uploads' (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&newUser.name, &normalizedName, &newUser.password, &apiKey, &Array::<String>::from_vec(vec![], 0), &Utc::now()])
-        .await?;
-    Ok(NewPackage {
-
+pub async fn create_package_uploads(db: Arc<Client>, package: NewPackage) -> Result<NewPackageResult, Error> {
+    Ok(NewPackageResult {
+        ok: true,
+        msg: "Success".to_owned()
     })
 }

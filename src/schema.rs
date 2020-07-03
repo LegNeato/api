@@ -1,6 +1,6 @@
 //! Juniper GraphQL handling done here
 use crate::context::GraphQLContext;
-use crate::db::{create_user, get_package, get_user_by_key};
+use crate::db::{create_user, get_package, get_user_by_key, create_package_uploads};
 use juniper::FieldResult;
 use juniper::RootNode;
 use juniper::{GraphQLInputObject, GraphQLObject};
@@ -61,6 +61,13 @@ pub struct NewUser {
     pub password: String,
 }
 
+#[derive(GraphQLObject)]
+#[graphql(description = "Package upload result")]
+pub struct NewPackageResult {
+    pub ok: bool,
+    pub msg: String,
+}
+
 pub struct QueryRoot;
 
 // Define QueryRoot for GraphQL
@@ -88,22 +95,10 @@ impl MutationRoot {
             .unwrap()
             .block_on(create_user(Arc::clone(&ctx.pool), new_user))?)
     }
-    fn create_package(ctx: &GraphQLContext, new_package: NewPackage) -> FieldResult<Package> {
-        Ok(Package {
-            name: new_package.name.to_owned(),
-            normalizedName: new_package.name.to_owned(),
-            owner: new_package.owner.to_owned(),
-            description: new_package.description.to_owned(),
-            repository: new_package.repository.to_owned(),
-            latestVersion: new_package.latestVersion.to_owned(),
-            latestStableVersion: new_package.latestStableVersion.to_owned(),
-            packageUploadNames: new_package.packageUploadNames,
-            locked: false,
-            malicious: false,
-            unlisted: false,
-            updatedAt: "sometime".to_owned(),
-            createdAt: "sometime".to_owned(),
-        })
+    fn create_package(ctx: &GraphQLContext, new_package: NewPackage) -> FieldResult<NewPackageResult> {
+        Ok(Runtime::new()
+            .unwrap()
+            .block_on(create_package_uploads(Arc::clone(&ctx.pool), new_package))?)
     }
 }
 
