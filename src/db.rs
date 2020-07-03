@@ -107,6 +107,12 @@ pub async fn create_user(db: Arc<Client>, newUser: NewUser) -> Result<User, Erro
 
 // TODO: implement upload creation
 pub async fn create_package_uploads(db: Arc<Client>, package: NewPackage) -> Result<NewPackageResult, Error> {
+    let rows = &db
+        .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
+        .await?;
+    if(rows.len() > 0) {
+        println!("{}", "found");
+    }
     Ok(NewPackageResult {
         ok: true,
         msg: "Success".to_owned()
