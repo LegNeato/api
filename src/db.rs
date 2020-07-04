@@ -7,6 +7,9 @@ use dotenv;
 use postgres_array::array::Array;
 use std::sync::Arc;
 use tokio_postgres::{Client, Error, NoTls};
+use serde::{Deserialize, Serialize};
+use postgres_types::Json;
+use postgres_types::{FromSql};
 
 // establish connection with Postgres db
 pub async fn connect() -> Result<Client, Error> {
@@ -165,11 +168,19 @@ pub async fn publish_package(
     }
 }
 
+
+#[derive(Debug, Deserialize, Serialize, FromSql)]
+pub struct Files {
+    pub inManifest: String,
+    pub txId: String,
+}
+
+
 // TODO: implement upload creation
 pub async fn create_package_uploads(
     db: Arc<Client>,
     package: NewPackageUpload,
-    files: serde_json::Value,
+    files: Files,
     prefix: String,
 ) -> Result<NewPackageResult, Error> {
     if !&package.upload {
@@ -188,7 +199,7 @@ pub async fn create_package_uploads(
             let newPackageUpload = &db
              .query(
                   "INSERT INTO 'package-uploads' (name, package, entry, version, prefix, files, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-                  &[&newPackageName, &package.name, &package.entry, &package.version, &prefix, &files, &insertTime]
+                  &[&newPackageName, &package.name, &package.entry, &package.version, &prefix, &Json::<Files>(files), &insertTime]
               )
              .await?;
             Ok(NewPackageResult {
