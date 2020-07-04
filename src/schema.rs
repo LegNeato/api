@@ -1,7 +1,7 @@
 //! Juniper GraphQL handling done here
 use crate::context::GraphQLContext;
 use crate::db::{
-    create_package_uploads, create_user, get_package, get_user_by_key, publish_package,
+    create_user, get_package, get_user_by_key, publish_package,
 };
 use juniper::FieldResult;
 use juniper::RootNode;
