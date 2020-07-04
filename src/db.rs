@@ -110,25 +110,44 @@ pub async fn publish_package(
     db: Arc<Client>,
     package: NewPackage,
 ) -> Result<NewPackageResult, Error> {
-    let userRows = &db
+    let userPackageRows = &db
         .query(
             "SELECT * FROM users WHERE apiKey = $1 AND $2 = ANY(packageNames)",
-            &[&package.apiKey],
+            &[&package.apiKey, &package.name],
         )
         .await?;
-    if userRows.len() > 0 {
-        let rows = &db
-            .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
-            .await?;
+    let rows = &db
+        .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
+        .await?;
+    let normalizedName = normalize(&package.name);
+    let insertTime = Utc::now();
+    if userPackageRows.len() > 0 {
+        // update the package
         if rows.len() > 0 {
-            // TODO: update existing package in DB
-            println!("{}", "found");
+            // TODO: alter table with new details
+            let newPackageUpload = &db
+                .query(
+                "INSERT INTO packages (name, normalizedName, owner, description, repository, latestVersion, latestStableVersion, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+                &[&package.name, &normalizedName, &insertTime])
+                .await?;
             Ok(NewPackageResult {
                 ok: true,
                 msg: "Success".to_owned(),
             })
         } else {
-            // TODO: insert new package into DB
+            Ok(NewPackageResult {
+                ok: false,
+                msg: "Not Found".to_owned(),
+            })
+        }
+    } else {
+        // check for exiting package or create new package
+        if rows.len() > 0 {
+            Ok(NewPackageResult {
+                ok: false,
+                msg: "Not Authorized".to_owned(),
+            })
+        } else {
             let normalizedName = normalize(&package.name);
             let insertTime = Utc::now();
             let newPackageUpload = &db
@@ -141,11 +160,6 @@ pub async fn publish_package(
                 msg: "Success".to_owned(),
             })
         }
-    } else {
-        Ok(NewPackageResult {
-            ok: false,
-            msg: "Not Authorized".to_owned(),
-        })
     }
 }
 
