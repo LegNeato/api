@@ -1,6 +1,6 @@
 //! Juniper GraphQL handling done here
 use crate::context::GraphQLContext;
-use crate::db::{create_user, get_package, get_user_by_key, create_package_uploads};
+use crate::db::{create_user, get_package, get_user_by_key, create_package_uploads, publish_package};
 use juniper::FieldResult;
 use juniper::RootNode;
 use juniper::{GraphQLInputObject, GraphQLObject};
@@ -40,8 +40,8 @@ pub struct User {
 
 // Define graphql schema for NewPackage
 #[derive(GraphQLInputObject)]
-#[graphql(description = "A nest.land package")]
-pub struct NewPackage {
+#[graphql(description = "A nest.land package upload")]
+pub struct NewPackageUpload {
     pub name: String,
     pub apiKey: String,
     pub description: String,
@@ -53,9 +53,21 @@ pub struct NewPackage {
     pub version: String,
 }
 
-// Define graphql schema for NewPackage
 #[derive(GraphQLInputObject)]
 #[graphql(description = "A nest.land package")]
+pub struct NewPackage {
+    pub name: String,
+    pub apiKey: String,
+    pub description: String,
+    pub repository: String,
+    pub locked: bool,
+    pub malicious: bool,
+    pub unlisted: bool,
+}
+
+// Define graphql schema for NewPackage
+#[derive(GraphQLInputObject)]
+#[graphql(description = "A nest.land new user")]
 pub struct NewUser {
     pub name: String,
     pub password: String,
@@ -98,7 +110,7 @@ impl MutationRoot {
     fn create_package(ctx: &GraphQLContext, new_package: NewPackage) -> FieldResult<NewPackageResult> {
         Ok(Runtime::new()
             .unwrap()
-            .block_on(create_package_uploads(Arc::clone(&ctx.pool), new_package))?)
+            .block_on(publish_package(Arc::clone(&ctx.pool), new_package))?)
     }
 }
 
