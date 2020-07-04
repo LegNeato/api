@@ -153,7 +153,7 @@ pub async fn publish_package(
             let newPackageUpload = &db
                 .query(
                 "INSERT INTO packages (name, normalizedName, owner, description, repository, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-                &[&package.name, &normalizedName, &userPackageRows.name, &package.description, &package.repository, &[], &package.locked, &package.malicious, &package.unlisted, &insertTime, &insertTime])
+                &[&package.name, &normalizedName, &userPackageRows.first().unwrap().get::<usize, String>(0), &package.description, &package.repository, &Array::<String>::from_vec(vec![], 0), &package.locked, &package.malicious, &package.unlisted, &insertTime, &insertTime])
                 .await?;
             Ok(NewPackageResult {
                 ok: true,
