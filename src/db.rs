@@ -1,6 +1,6 @@
 // Postgres database management for Nest API
 
-use crate::schema::{NewPackage, NewUser, Package, User, NewPackageResult};
+use crate::schema::{NewPackage, NewUser, Package, User, NewPackageResult, NewPackageUpload};
 use crate::utils::{create_api_key, first, normalize};
 use chrono::{DateTime, Utc};
 use dotenv;
@@ -105,8 +105,33 @@ pub async fn create_user(db: Arc<Client>, newUser: NewUser) -> Result<User, Erro
     })
 }
 
+// TODO: publish packages
+pub async fn publish_package(db: Arc<Client>, package: NewPackage) -> Result<NewPackage, Error> {
+    let userRows = &db.query("SELECT * FROM users WHERE apiKey = $1", &[package.apiKey]).await?;
+    if userRows.len() > 0 {
+        let rows = &db
+            .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
+            .await?;
+        if rows.len() > 0 {
+            // TODO: update existing package in DB
+            println!("{}", "found");
+        } else {
+            // TODO: insert new package into DB
+            let normalizedName = normalize(&package.name);
+            let insertTime = Utc::now();
+            let newPackageUpload = &db.execute("INSERT INTO packages (name, normalizedName, owner, description, repository, latestVersion, latestStableVersion, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", &[&package.name, &normalizedName, &insertTime]).await?;
+        }
+    }
+    else {
+        Ok(NewPackageResult {
+            ok: false,
+            msg: "Not Authorized".to_owned()
+        })
+    }
+}
+
 // TODO: implement upload creation
-pub async fn create_package_uploads(db: Arc<Client>, package: NewPackage) -> Result<NewPackageResult, Error> {
+pub async fn create_package_uploads(db: Arc<Client>, package: NewPackageUpload) -> Result<NewPackageResult, Error> {
     let rows = &db
         .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
         .await?;
