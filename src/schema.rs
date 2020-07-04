@@ -8,7 +8,6 @@ use juniper::RootNode;
 use juniper::{GraphQLInputObject, GraphQLObject};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use tokio_postgres::Client;
 
 // Define GraphQL schema for package retrival
 #[derive(GraphQLObject)]
