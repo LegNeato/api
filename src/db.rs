@@ -181,7 +181,7 @@ pub async fn create_package_uploads(
         let rows = &db
             .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
             .await?;
-        if (rows.len() > 0) {
+        if rows.len() > 0 {
             // TODO: insert new package into DB
             let newPackageName = format!("{}@{}", &package.name, &package.version);
             let insertTime = Utc::now();
