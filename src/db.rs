@@ -141,13 +141,14 @@ pub async fn publish_package(
             })
         }
     } else {
-        // check for exiting package or create new package
+        // check for exiting package
         if rows.len() > 0 {
             Ok(NewPackageResult {
                 ok: false,
                 msg: "Not Authorized".to_owned(),
             })
         } else {
+            // creates a new package entry for the author
             let normalizedName = normalize(&package.name);
             let insertTime = Utc::now();
             let newPackageUpload = &db
@@ -155,6 +156,7 @@ pub async fn publish_package(
                 "INSERT INTO packages (name, normalizedName, owner, description, repository, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
                 &[&package.name, &normalizedName, &userPackageRows.first().unwrap().get::<usize, String>(0), &package.description, &package.repository, &Array::<String>::from_vec(vec![], 0), &package.locked, &package.malicious, &package.unlisted, &insertTime, &insertTime])
                 .await?;
+            // TODO: alter user and push the new package name
             Ok(NewPackageResult {
                 ok: true,
                 msg: "Success".to_owned(),
@@ -167,21 +169,37 @@ pub async fn publish_package(
 pub async fn create_package_uploads(
     db: Arc<Client>,
     package: NewPackageUpload,
+    files: serde_json::Value,
+    prefix: String,
 ) -> Result<NewPackageResult, Error> {
-    let rows = &db
-        .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
-        .await?;
-    if (rows.len() > 0) {
-        // TODO: update existing package in DB
-        println!("{}", "found");
+    if(!&package.upload) {
+        Ok(NewPackageResult {
+            ok: true,
+            msg: "Success".to_owned(),
+        })
     } else {
-        // TODO: insert new package into DB
-        let newPackageName = format!("{}@{}", &package.name, &package.version);
-        let insertTime = Utc::now();
-        let newPackageUpload = &db.execute("INSERT INTO 'package-uploads' (name, package, entry, version, prefix, malicious, files, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", &[&newPackageName, &insertTime]).await?;
+        let rows = &db
+            .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
+            .await?;
+        if (rows.len() > 0) {
+            // TODO: insert new package into DB
+            let newPackageName = format!("{}@{}", &package.name, &package.version);
+            let insertTime = Utc::now();
+            let newPackageUpload = &db
+             .query(
+                  "INSERT INTO 'package-uploads' (name, package, entry, version, prefix, files, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                  &[&newPackageName, &package.name, &package.entry, &package.version, &prefix, &files, &insertTime]
+              )
+             .await?;
+            Ok(NewPackageResult {
+                ok: true,
+                msg: "Success".to_owned(),
+            })
+        } else {
+            Ok(NewPackageResult {
+                ok: false,
+                msg: "Not found".to_owned(),
+            })
+        }
     }
-    Ok(NewPackageResult {
-        ok: true,
-        msg: "Success".to_owned(),
-    })
 }
