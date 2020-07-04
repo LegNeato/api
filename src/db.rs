@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 use dotenv;
 use postgres_array::array::Array;
 use std::sync::Arc;
-use std::time::SystemTime;
 use tokio_postgres::{Client, Error, NoTls};
 
 // establish connection with Postgres db
