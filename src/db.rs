@@ -172,7 +172,7 @@ pub async fn create_package_uploads(
     files: serde_json::Value,
     prefix: String,
 ) -> Result<NewPackageResult, Error> {
-    if(!&package.upload) {
+    if !&package.upload {
         Ok(NewPackageResult {
             ok: true,
             msg: "Success".to_owned(),
