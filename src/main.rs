@@ -6,7 +6,8 @@ use std::sync::Arc;
 
 use actix_cors::Cors;
 use actix_multipart::Multipart;
-use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer, error};
+use actix_web::{error, middleware, web, App, Error, HttpResponse, HttpServer};
+use failure::Fail;
 use futures::{StreamExt, TryStreamExt};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
@@ -16,7 +17,6 @@ use std::io::Write;
 use std::path::Path;
 use tokio_postgres::Client;
 use uuid::Uuid;
-use failure::Fail;
 
 mod context;
 mod db;

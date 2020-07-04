@@ -1,6 +1,8 @@
 //! Juniper GraphQL handling done here
 use crate::context::GraphQLContext;
-use crate::db::{create_user, get_package, get_user_by_key, create_package_uploads, publish_package};
+use crate::db::{
+    create_package_uploads, create_user, get_package, get_user_by_key, publish_package,
+};
 use juniper::FieldResult;
 use juniper::RootNode;
 use juniper::{GraphQLInputObject, GraphQLObject};
@@ -107,7 +109,10 @@ impl MutationRoot {
             .unwrap()
             .block_on(create_user(Arc::clone(&ctx.pool), new_user))?)
     }
-    fn create_package(ctx: &GraphQLContext, new_package: NewPackage) -> FieldResult<NewPackageResult> {
+    fn create_package(
+        ctx: &GraphQLContext,
+        new_package: NewPackage,
+    ) -> FieldResult<NewPackageResult> {
         Ok(Runtime::new()
             .unwrap()
             .block_on(publish_package(Arc::clone(&ctx.pool), new_package))?)
