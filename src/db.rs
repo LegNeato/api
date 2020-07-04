@@ -111,7 +111,13 @@ pub async fn create_package_uploads(db: Arc<Client>, package: NewPackage) -> Res
         .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
         .await?;
     if(rows.len() > 0) {
+        // TODO: update existing package in DB
         println!("{}", "found");
+    } else {
+        // TODO: insert new package into DB
+        let newPackageName = format!("{}@{}", &package.name, &package.version);
+        let insertTime = Utc::now();
+        let newPackageUpload = &db.execute("INSERT INTO 'package-uploads' (name, package, entry, version, prefix, malicious, files, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", &[&newPackageName, &insertTime]).await?;
     }
     Ok(NewPackageResult {
         ok: true,
