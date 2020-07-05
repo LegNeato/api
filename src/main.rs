@@ -51,8 +51,8 @@ async fn graphql(
 
 #[derive(serde::Deserialize, Debug)]
 pub struct Config {
-    pub apiKey: String,
-    pub packageName: String,
+    pub api_key: String,
+    pub package_name: String,
 }
 
 async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {

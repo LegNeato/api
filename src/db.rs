@@ -70,7 +70,7 @@ pub async fn get_package(db: Arc<Client>, name: String) -> Result<Package, Strin
 // Method to retrieve a user from db
 pub async fn get_user_by_key(db: Arc<Client>, api_key: String) -> Result<User, String> {
     let rows = &db
-        .query("SELECT * FROM users WHERE api_key = $1", &[&api_key])
+        .query("SELECT * FROM users WHERE apiKey = $1", &[&api_key])
         .await
         .unwrap();
     let _row = first(rows);
@@ -91,11 +91,11 @@ pub async fn get_user_by_key(db: Arc<Client>, api_key: String) -> Result<User, S
 
 // Method to create a user
 pub async fn create_user(db: Arc<Client>, new_user: NewUser) -> Result<User, Error> {
-    let apiKey = create_api_key();
-    let currTime = Utc::now();
-    let normalizedName = normalize(&new_user.name);
+    let api_key = create_api_key();
+    let curr_time = Utc::now();
+    let normalized_name = normalize(&new_user.name);
     let rows = &db
-        .query("INSERT INTO users (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&new_user.name, &normalizedName, &new_user.password, &apiKey, &Array::<String>::from_vec(vec![], 0), &currTime])
+        .query("INSERT INTO users (name, normalized_name, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&new_user.name, &normalized_name, &new_user.password, &api_key, &Array::<String>::from_vec(vec![], 0), &curr_time])
         .await?;
     let name = new_user.name;
     Ok(User {
@@ -112,25 +112,25 @@ pub async fn publish_package(
     db: Arc<Client>,
     package: NewPackage,
 ) -> Result<NewPackageResult, Error> {
-    let userPackageRows = &db
+    let user_package_rows = &db
         .query(
             "SELECT * FROM users WHERE apiKey = $1 AND $2 = ANY(packageNames)",
-            &[&package.apiKey, &package.name],
+            &[&package.api_key, &package.name],
         )
         .await?;
     let rows = &db
         .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
         .await?;
-    let normalizedName = normalize(&package.name);
-    let insertTime = Utc::now();
-    if userPackageRows.len() > 0 {
+    let normalized_name = normalize(&package.name);
+    let insert_time = Utc::now();
+    if user_package_rows.len() > 0 {
         // update the package
         if rows.len() > 0 {
             // update table with new details
-            let newPackageUpload = &db
+            let new_package_upload = &db
                 .query(
                 "UPDATE packages SET updatedAt = $1, description = $2, repository = $3, unlisted = $4 WHERE name = $2",
-                &[&insertTime, &package.description, &package.repository, &package.unlisted, &package.name])
+                &[&insert_time, &package.description, &package.repository, &package.unlisted, &package.name])
                 .await?;
             Ok(NewPackageResult {
                 ok: true,
@@ -151,21 +151,21 @@ pub async fn publish_package(
             })
         } else {
             // creates a new package entry for the author
-            let normalizedName = normalize(&package.name);
-            let insertTime = Utc::now();
-            let newPackageUpload = &db
+            let normalized_name = normalize(&package.name);
+            let insert_time = Utc::now();
+            let new_package_upload = &db
                 .query(
-                    "INSERT INTO packages (name, normalizedName, owner, description, repository, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-                    &[&package.name, &normalizedName, &userPackageRows.first().unwrap().get::<usize, String>(0), &package.description, &package.repository, &Array::<String>::from_vec(vec![], 0), &package.locked, &package.malicious, &package.unlisted, &insertTime, &insertTime]
+                    "INSERT INTO packages (name, normalized_name, owner, description, repository, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+                    &[&package.name, &normalized_name, &user_package_rows.first().unwrap().get::<usize, String>(0), &package.description, &package.repository, &Array::<String>::from_vec(vec![], 0), &package.locked, &package.malicious, &package.unlisted, &insert_time, &insert_time]
                 )
                 .await?;
             // update user and push the new package name
-            let mut packageNames: Vec<String> = userPackageRows.first().unwrap().get::<usize, Array<String>>(4).iter().cloned().collect();
-            packageNames.push(package.name);
-            let newPackageUpload = &db
+            let mut package_names: Vec<String> = user_package_rows.first().unwrap().get::<usize, Array<String>>(4).iter().cloned().collect();
+            package_names.push(package.name);
+            let new_package_upload = &db
                 .query(
                 "UPDATE users SET packageNames = $1 WHERE name = $2",
-                &[&Array::<String>::from_vec(packageNames.clone(), packageNames.len() as i32), &userPackageRows.first().unwrap().get::<usize, String>(0)])
+                &[&Array::<String>::from_vec(package_names.clone(), package_names.len() as i32), &user_package_rows.first().unwrap().get::<usize, String>(0)])
                 .await?;
             Ok(NewPackageResult {
                 ok: true,
@@ -178,8 +178,8 @@ pub async fn publish_package(
 
 #[derive(Debug, Deserialize, Serialize, FromSql)]
 pub struct Files {
-    pub inManifest: String,
-    pub txId: String,
+    pub in_manifest: String,
+    pub tx_id: String,
 }
 
 
@@ -201,12 +201,12 @@ pub async fn create_package_uploads(
             .await?;
         if rows.len() > 0 {
             // TODO: insert new package into DB
-            let newPackageName = format!("{}@{}", &package.name, &package.version);
-            let insertTime = Utc::now();
-            let newPackageUpload = &db
+            let new_package_name = format!("{}@{}", &package.name, &package.version);
+            let insert_time = Utc::now();
+            let new_package_upload = &db
              .query(
                   "INSERT INTO 'package-uploads' (name, package, entry, version, prefix, files, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-                  &[&newPackageName, &package.name, &package.entry, &package.version, &prefix, &Json::<Files>(files), &insertTime]
+                  &[&new_package_name, &package.name, &package.entry, &package.version, &prefix, &Json::<Files>(files), &insert_time]
               )
              .await?;
             Ok(NewPackageResult {

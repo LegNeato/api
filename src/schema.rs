@@ -44,7 +44,7 @@ pub struct User {
 #[graphql(description = "A nest.land package upload")]
 pub struct NewPackageUpload {
     pub name: String,
-    pub apiKey: String,
+    pub api_key: String,
     pub description: String,
     pub repository: String,
     pub upload: bool,
@@ -58,7 +58,7 @@ pub struct NewPackageUpload {
 #[graphql(description = "A nest.land package")]
 pub struct NewPackage {
     pub name: String,
-    pub apiKey: String,
+    pub api_key: String,
     pub description: String,
     pub repository: String,
     pub locked: bool,
