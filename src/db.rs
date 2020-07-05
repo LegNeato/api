@@ -95,7 +95,7 @@ pub async fn create_user(db: Arc<Client>, new_user: NewUser) -> Result<User, Err
     let curr_time = Utc::now();
     let normalized_name = normalize(&new_user.name);
     let rows = &db
-        .query("INSERT INTO users (name, normalized_name, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&new_user.name, &normalized_name, &new_user.password, &api_key, &Array::<String>::from_vec(vec![], 0), &curr_time])
+        .query("INSERT INTO users (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&new_user.name, &normalized_name, &new_user.password, &api_key, &Array::<String>::from_vec(vec![], 0), &curr_time])
         .await?;
     let name = new_user.name;
     Ok(User {
@@ -155,7 +155,7 @@ pub async fn publish_package(
             let insert_time = Utc::now();
             let new_package_upload = &db
                 .query(
-                    "INSERT INTO packages (name, normalized_name, owner, description, repository, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+                    "INSERT INTO packages (name, normalizedName, owner, description, repository, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
                     &[&package.name, &normalized_name, &user_package_rows.first().unwrap().get::<usize, String>(0), &package.description, &package.repository, &Array::<String>::from_vec(vec![], 0), &package.locked, &package.malicious, &package.unlisted, &insert_time, &insert_time]
                 )
                 .await?;
