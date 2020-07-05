@@ -159,7 +159,14 @@ pub async fn publish_package(
                     &[&package.name, &normalizedName, &userPackageRows.first().unwrap().get::<usize, String>(0), &package.description, &package.repository, &Array::<String>::from_vec(vec![], 0), &package.locked, &package.malicious, &package.unlisted, &insertTime, &insertTime]
                 )
                 .await?;
-            // TODO: alter user and push the new package name
+            // update user and push the new package name
+            let mut packageNames: Vec<String> = userPackageRows.first().unwrap().get::<usize, Array<String>>(4).iter().cloned().collect();
+            packageNames.push(package.name);
+            let newPackageUpload = &db
+                .query(
+                "UPDATE users SET packageNames = $1 WHERE name = $2",
+                &[&Array::<String>::from_vec(packageNames.clone(), packageNames.len() as i32), &userPackageRows.first().unwrap().get::<usize, String>(0)])
+                .await?;
             Ok(NewPackageResult {
                 ok: true,
                 msg: "Success".to_owned(),
