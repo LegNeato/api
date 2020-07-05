@@ -44,21 +44,21 @@ pub async fn get_package(db: Arc<Client>, name: String) -> Result<Package, Strin
     let _row = first(rows);
     if let Some(x) = _row {
         let row = _row.unwrap();
-        let uploadNames: Array<String> = row.get(7);
+        let upload_names: Array<String> = row.get(7);
         Ok(Package {
             name: row.get(0),
-            normalizedName: row.get(1),
+            normalized_name: row.get(1),
             owner: row.get(2),
             description: row.get(3),
             repository: row.get(4),
-            latestVersion: row.get(5),
-            latestStableVersion: row.get(6),
-            packageUploadNames: uploadNames.iter().cloned().collect(),
+            latest_version: row.get(5),
+            latest_stable_version: row.get(6),
+            package_upload_names: upload_names.iter().cloned().collect(),
             locked: row.get(8),
             malicious: row.get(9),
             unlisted: row.get(10),
-            updatedAt: format!("{:?}", row.get::<usize, DateTime<Utc>>(11)),
-            createdAt: format!("{:?}", row.get::<usize, DateTime<Utc>>(12)),
+            updated_at: format!("{:?}", row.get::<usize, DateTime<Utc>>(11)),
+            created_at: format!("{:?}", row.get::<usize, DateTime<Utc>>(12)),
         })
     } else {
         Err("Not found".to_string())
@@ -66,21 +66,21 @@ pub async fn get_package(db: Arc<Client>, name: String) -> Result<Package, Strin
 }
 
 // Method to retrieve a user from db
-pub async fn get_user_by_key(db: Arc<Client>, apiKey: String) -> Result<User, String> {
+pub async fn get_user_by_key(db: Arc<Client>, api_key: String) -> Result<User, String> {
     let rows = &db
-        .query("SELECT * FROM users WHERE apiKey = $1", &[&apiKey])
+        .query("SELECT * FROM users WHERE api_key = $1", &[&api_key])
         .await
         .unwrap();
     let _row = first(rows);
     if let Some(x) = _row {
         let row = _row.unwrap();
-        let packageNames: Array<String> = row.get(4);
+        let package_names: Array<String> = row.get(4);
         Ok(User {
             name: row.get(0),
-            normalizedName: row.get(1),
-            apiKey: row.get(3),
-            packageNames: packageNames.iter().cloned().collect(),
-            createdAt: format!("{:?}", row.get::<usize, DateTime<Utc>>(5)),
+            normalized_name: row.get(1),
+            api_key: row.get(3),
+            package_names: package_names.iter().cloned().collect(),
+            created_at: format!("{:?}", row.get::<usize, DateTime<Utc>>(5)),
         })
     } else {
         Err("Not found".to_string())
@@ -88,19 +88,19 @@ pub async fn get_user_by_key(db: Arc<Client>, apiKey: String) -> Result<User, St
 }
 
 // Method to create a user
-pub async fn create_user(db: Arc<Client>, newUser: NewUser) -> Result<User, Error> {
-    let apiKey = create_api_key();
-    let normalizedName = normalize(&newUser.name);
+pub async fn create_user(db: Arc<Client>, new_user: NewUser) -> Result<User, Error> {
+    let api_key = create_api_key();
+    let normalized_name = normalize(&new_user.name);
     let rows = &db
-        .query("INSERT INTO users (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&newUser.name, &normalizedName, &newUser.password, &apiKey, &Array::<String>::from_vec(vec![], 0), &Utc::now()])
+        .query("INSERT INTO users (name, normalized_name, password, api_key, package_names, created_at) VALUES ($1, $2, $3, $4, $5, $6)", &[&new_user.name, &normalized_name, &new_user.password, &api_key, &Array::<String>::from_vec(vec![], 0), &Utc::now()])
         .await?;
-    let name = newUser.name;
+    let name = new_user.name;
     Ok(User {
         name: name,
-        normalizedName: normalizedName,
-        apiKey: apiKey,
-        packageNames: vec![],
-        createdAt: format!("{:?}", Utc::now()),
+        normalized_name: normalized_name,
+        api_key: api_key,
+        package_names: vec![],
+        created_at: format!("{:?}", Utc::now()),
     })
 }
 

@@ -13,18 +13,18 @@ use tokio_postgres::Client;
 #[graphql(description = "A nest.land package")]
 pub struct Package {
     pub name: String,
-    pub normalizedName: String,
+    pub normalized_name: String,
     pub owner: String,
     pub description: String,
     pub repository: String,
-    pub latestVersion: String,
-    pub latestStableVersion: String,
-    pub packageUploadNames: Vec<String>,
+    pub latest_version: String,
+    pub latest_stable_version: String,
+    pub package_upload_names: Vec<String>,
     pub locked: bool,
     pub malicious: bool,
     pub unlisted: bool,
-    pub updatedAt: String,
-    pub createdAt: String,
+    pub updated_at: String,
+    pub created_at: String,
 }
 
 // Define GraphQL schema for User retrival
@@ -32,10 +32,10 @@ pub struct Package {
 #[graphql(description = "A nest.land package author")]
 pub struct User {
     pub name: String,
-    pub normalizedName: String,
-    pub apiKey: String,
-    pub packageNames: Vec<String>,
-    pub createdAt: String,
+    pub normalized_name: String,
+    pub api_key: String,
+    pub package_names: Vec<String>,
+    pub created_at: String,
 }
 
 // Define graphql schema for NewPackage
@@ -46,9 +46,9 @@ pub struct NewPackage {
     pub owner: String,
     pub description: String,
     pub repository: String,
-    pub latestVersion: String,
-    pub latestStableVersion: String,
-    pub packageUploadNames: Vec<String>,
+    pub latest_version: String,
+    pub latest_stable_version: String,
+    pub package_upload_names: Vec<String>,
     pub locked: bool,
     pub malicious: bool,
     pub unlisted: bool,
@@ -72,10 +72,10 @@ impl QueryRoot {
             .unwrap()
             .block_on(get_package(Arc::clone(&ctx.pool), name))?)
     }
-    fn user(ctx: &GraphQLContext, apiKey: String) -> FieldResult<User> {
+    fn user(ctx: &GraphQLContext, api_key: String) -> FieldResult<User> {
         Ok(Runtime::new()
             .unwrap()
-            .block_on(get_user_by_key(Arc::clone(&ctx.pool), apiKey))?)
+            .block_on(get_user_by_key(Arc::clone(&ctx.pool), api_key))?)
     }
 }
 
@@ -92,18 +92,18 @@ impl MutationRoot {
     fn create_package(ctx: &GraphQLContext, new_package: NewPackage) -> FieldResult<Package> {
         Ok(Package {
             name: new_package.name.to_owned(),
-            normalizedName: new_package.name.to_owned(),
+            normalized_name: new_package.name.to_owned(),
             owner: new_package.owner.to_owned(),
             description: new_package.description.to_owned(),
             repository: new_package.repository.to_owned(),
-            latestVersion: new_package.latestVersion.to_owned(),
-            latestStableVersion: new_package.latestStableVersion.to_owned(),
-            packageUploadNames: new_package.packageUploadNames,
+            latest_version: new_package.latest_version.to_owned(),
+            latest_stable_version: new_package.latest_stable_version.to_owned(),
+            package_upload_names: new_package.package_upload_names,
             locked: false,
             malicious: false,
             unlisted: false,
-            updatedAt: "sometime".to_owned(),
-            createdAt: "sometime".to_owned(),
+            updated_at: "sometime".to_owned(),
+            created_at: "sometime".to_owned(),
         })
     }
 }

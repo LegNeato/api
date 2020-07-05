@@ -53,19 +53,19 @@ async fn graphql(
 
 // TODO: use this struct
 pub struct OngoingUpload {
-    packageName: String,
+    package_name: String,
     done: bool,
 }
 
 async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
     // iterate over multipart stream
-    let mut formValues = Vec::new();
+    let mut form_values = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_type = field.content_disposition().unwrap();
         let mime_type = field.content_type();
         println!("{}", mime_type.type_());
         let filename = content_type.get_filename();
-        let unqiueName = Uuid::new_v4().to_simple().to_string();
+        let unique_name = Uuid::new_v4().to_simple().to_string();
         let filepath = format!("tmp/{}", filename.unwrap_or("none"));
         // File::create is blocking operation, use threadpool
         let mut f = web::block(move || std::fs::File::create(Path::new(&filepath)))
@@ -77,7 +77,7 @@ async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
             match filename {
                 None => {
                     println!("{:?}", data);
-                    formValues.extend_from_slice(&data);
+                    form_values.extend_from_slice(&data);
                 }
                 Some(n) => {
                     // filesystem operations are blocking, we have to use threadpool
@@ -86,7 +86,7 @@ async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
             }
         }
     }
-    let apiKey = formValues[0];
+    let api_key = form_values[0];
     Ok(HttpResponse::Ok().into())
 }
 

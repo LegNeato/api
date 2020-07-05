@@ -3,25 +3,25 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct NewTx {
-    tmpID: String,
+    tmp_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct PostTx {
-    txID: String,
+    tx_id: String,
     name: String,
-    relativePath: String,
+    relative_path: String,
 }
 
-pub async fn tx(tmpID: String) -> Result<PostTx, reqwest::Error> {
-    let newTx = NewTx { tmpID: tmpID };
-    let txDone: PostTx = reqwest::Client::new()
+pub async fn tx(tmp_id: String) -> Result<PostTx, reqwest::Error> {
+    let new_tx = NewTx { tmp_id: tmp_id };
+    let tx_done: PostTx = reqwest::Client::new()
         .post("http://localhost:3000/tx/new")
-        .json(&newTx)
+        .json(&new_tx)
         .send()
         .await?
         .json()
         .await?;
 
-    Ok(txDone)
+    Ok(tx_done)
 }
