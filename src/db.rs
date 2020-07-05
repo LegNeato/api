@@ -1,13 +1,15 @@
 // Postgres database management for Nest API
 
-use crate::schema::{NewUser, Package, User, NewPackage};
+use crate::schema::{NewPackage, NewPackageResult, NewPackageUpload, NewUser, Package, User};
 use crate::utils::{create_api_key, first, normalize};
 use chrono::{DateTime, Utc};
 use dotenv;
 use postgres_array::array::Array;
 use std::sync::Arc;
-use std::time::SystemTime;
 use tokio_postgres::{Client, Error, NoTls};
+use serde::{Deserialize, Serialize};
+use postgres_types::Json;
+use postgres_types::{FromSql};
 
 // establish connection with Postgres db
 pub async fn connect() -> Result<Client, Error> {
@@ -90,9 +92,10 @@ pub async fn get_user_by_key(db: Arc<Client>, apiKey: String) -> Result<User, St
 // Method to create a user
 pub async fn create_user(db: Arc<Client>, newUser: NewUser) -> Result<User, Error> {
     let apiKey = create_api_key();
+    let currTime = Utc::now();
     let normalizedName = normalize(&newUser.name);
     let rows = &db
-        .query("INSERT INTO users (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&newUser.name, &normalizedName, &newUser.password, &apiKey, &Array::<String>::from_vec(vec![], 0), &Utc::now()])
+        .query("INSERT INTO users (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&newUser.name, &normalizedName, &newUser.password, &apiKey, &Array::<String>::from_vec(vec![], 0), &currTime])
         .await?;
     let name = newUser.name;
     Ok(User {
@@ -100,11 +103,121 @@ pub async fn create_user(db: Arc<Client>, newUser: NewUser) -> Result<User, Erro
         normalizedName: normalizedName,
         apiKey: apiKey,
         packageNames: vec![],
-        createdAt: format!("{:?}", Utc::now()),
+        createdAt: format!("{:?}", currTime),
     })
 }
 
+// TODO: publish packages
+pub async fn publish_package(
+    db: Arc<Client>,
+    package: NewPackage,
+) -> Result<NewPackageResult, Error> {
+    let userPackageRows = &db
+        .query(
+            "SELECT * FROM users WHERE apiKey = $1 AND $2 = ANY(packageNames)",
+            &[&package.apiKey, &package.name],
+        )
+        .await?;
+    let rows = &db
+        .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
+        .await?;
+    let normalizedName = normalize(&package.name);
+    let insertTime = Utc::now();
+    if userPackageRows.len() > 0 {
+        // update the package
+        if rows.len() > 0 {
+            // update table with new details
+            let newPackageUpload = &db
+                .query(
+                "UPDATE packages SET updatedAt = $1, description = $2, repository = $3, unlisted = $4 WHERE name = $2",
+                &[&insertTime, &package.description, &package.repository, &package.unlisted, &package.name])
+                .await?;
+            Ok(NewPackageResult {
+                ok: true,
+                msg: "Success".to_owned(),
+            })
+        } else {
+            Ok(NewPackageResult {
+                ok: false,
+                msg: "Not Found".to_owned(),
+            })
+        }
+    } else {
+        // check for exiting package
+        if rows.len() > 0 {
+            Ok(NewPackageResult {
+                ok: false,
+                msg: "Not Authorized".to_owned(),
+            })
+        } else {
+            // creates a new package entry for the author
+            let normalizedName = normalize(&package.name);
+            let insertTime = Utc::now();
+            let newPackageUpload = &db
+                .query(
+                    "INSERT INTO packages (name, normalizedName, owner, description, repository, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+                    &[&package.name, &normalizedName, &userPackageRows.first().unwrap().get::<usize, String>(0), &package.description, &package.repository, &Array::<String>::from_vec(vec![], 0), &package.locked, &package.malicious, &package.unlisted, &insertTime, &insertTime]
+                )
+                .await?;
+            // update user and push the new package name
+            let mut packageNames: Vec<String> = userPackageRows.first().unwrap().get::<usize, Array<String>>(4).iter().cloned().collect();
+            packageNames.push(package.name);
+            let newPackageUpload = &db
+                .query(
+                "UPDATE users SET packageNames = $1 WHERE name = $2",
+                &[&Array::<String>::from_vec(packageNames.clone(), packageNames.len() as i32), &userPackageRows.first().unwrap().get::<usize, String>(0)])
+                .await?;
+            Ok(NewPackageResult {
+                ok: true,
+                msg: "Success".to_owned(),
+            })
+        }
+    }
+}
+
+
+#[derive(Debug, Deserialize, Serialize, FromSql)]
+pub struct Files {
+    pub inManifest: String,
+    pub txId: String,
+}
+
+
 // TODO: implement upload creation
-pub async fn create_package_uploads(db: Arc<Client>, package: NewPackage) -> Result<(), Error> {
-    Ok(())
+pub async fn create_package_uploads(
+    db: Arc<Client>,
+    package: NewPackageUpload,
+    files: Files,
+    prefix: String,
+) -> Result<NewPackageResult, Error> {
+    if !&package.upload {
+        Ok(NewPackageResult {
+            ok: true,
+            msg: "Success".to_owned(),
+        })
+    } else {
+        let rows = &db
+            .query("SELECT * FROM packages WHERE name = $1", &[&package.name])
+            .await?;
+        if rows.len() > 0 {
+            // TODO: insert new package into DB
+            let newPackageName = format!("{}@{}", &package.name, &package.version);
+            let insertTime = Utc::now();
+            let newPackageUpload = &db
+             .query(
+                  "INSERT INTO 'package-uploads' (name, package, entry, version, prefix, files, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                  &[&newPackageName, &package.name, &package.entry, &package.version, &prefix, &Json::<Files>(files), &insertTime]
+              )
+             .await?;
+            Ok(NewPackageResult {
+                ok: true,
+                msg: "Success".to_owned(),
+            })
+        } else {
+            Ok(NewPackageResult {
+                ok: false,
+                msg: "Not found".to_owned(),
+            })
+        }
+    }
 }

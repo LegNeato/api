@@ -1,12 +1,13 @@
 //! Juniper GraphQL handling done here
 use crate::context::GraphQLContext;
-use crate::db::{create_user, get_package, get_user_by_key};
+use crate::db::{
+    create_user, get_package, get_user_by_key, publish_package,
+};
 use juniper::FieldResult;
 use juniper::RootNode;
 use juniper::{GraphQLInputObject, GraphQLObject};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use tokio_postgres::Client;
 
 // Define GraphQL schema for package retrival
 #[derive(GraphQLObject)]
@@ -40,15 +41,26 @@ pub struct User {
 
 // Define graphql schema for NewPackage
 #[derive(GraphQLInputObject)]
+#[graphql(description = "A nest.land package upload")]
+pub struct NewPackageUpload {
+    pub name: String,
+    pub apiKey: String,
+    pub description: String,
+    pub repository: String,
+    pub upload: bool,
+    pub entry: String,
+    pub stable: bool,
+    pub unlisted: bool,
+    pub version: String,
+}
+
+#[derive(GraphQLInputObject)]
 #[graphql(description = "A nest.land package")]
 pub struct NewPackage {
     pub name: String,
-    pub owner: String,
+    pub apiKey: String,
     pub description: String,
     pub repository: String,
-    pub latestVersion: String,
-    pub latestStableVersion: String,
-    pub packageUploadNames: Vec<String>,
     pub locked: bool,
     pub malicious: bool,
     pub unlisted: bool,
@@ -56,10 +68,17 @@ pub struct NewPackage {
 
 // Define graphql schema for NewPackage
 #[derive(GraphQLInputObject)]
-#[graphql(description = "A nest.land package")]
+#[graphql(description = "A nest.land new user")]
 pub struct NewUser {
     pub name: String,
     pub password: String,
+}
+
+#[derive(GraphQLObject)]
+#[graphql(description = "Package upload result")]
+pub struct NewPackageResult {
+    pub ok: bool,
+    pub msg: String,
 }
 
 pub struct QueryRoot;
@@ -89,22 +108,13 @@ impl MutationRoot {
             .unwrap()
             .block_on(create_user(Arc::clone(&ctx.pool), new_user))?)
     }
-    fn create_package(ctx: &GraphQLContext, new_package: NewPackage) -> FieldResult<Package> {
-        Ok(Package {
-            name: new_package.name.to_owned(),
-            normalizedName: new_package.name.to_owned(),
-            owner: new_package.owner.to_owned(),
-            description: new_package.description.to_owned(),
-            repository: new_package.repository.to_owned(),
-            latestVersion: new_package.latestVersion.to_owned(),
-            latestStableVersion: new_package.latestStableVersion.to_owned(),
-            packageUploadNames: new_package.packageUploadNames,
-            locked: false,
-            malicious: false,
-            unlisted: false,
-            updatedAt: "sometime".to_owned(),
-            createdAt: "sometime".to_owned(),
-        })
+    fn create_package(
+        ctx: &GraphQLContext,
+        new_package: NewPackage,
+    ) -> FieldResult<NewPackageResult> {
+        Ok(Runtime::new()
+            .unwrap()
+            .block_on(publish_package(Arc::clone(&ctx.pool), new_package))?)
     }
 }
 
