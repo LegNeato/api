@@ -126,11 +126,11 @@ pub async fn publish_package(
     if userPackageRows.len() > 0 {
         // update the package
         if rows.len() > 0 {
-            // TODO: alter table with new details
+            // update table with new details
             let newPackageUpload = &db
                 .query(
-                "INSERT INTO packages (name, normalizedName, owner, description, repository, latestVersion, latestStableVersion, packageUploadNames, locked, malicious, unlisted, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-                &[&package.name, &normalizedName, &insertTime])
+                "UPDATE packages SET updatedAt = $1, description = $2, repository = $3, unlisted = $4 WHERE name = $2",
+                &[&insertTime, &package.description, &package.repository, &package.unlisted, &package.name])
                 .await?;
             Ok(NewPackageResult {
                 ok: true,
