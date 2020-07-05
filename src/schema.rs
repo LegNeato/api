@@ -38,6 +38,13 @@ pub struct User {
     pub package_names: Vec<String>,
     pub created_at: String,
 }
+#[derive(GraphQLObject)]
+#[graphql(description = "A nest.land package author [restricted]")]
+pub struct PublicUser {
+    pub name: String,
+    pub normalized_name: String,
+    pub package_names: Vec<String>,
+}
 
 // Define graphql schema for NewPackage
 #[derive(GraphQLInputObject)]
@@ -91,7 +98,7 @@ impl QueryRoot {
             .unwrap()
             .block_on(get_package(Arc::clone(&ctx.pool), name))?)
     }
-    fn user_by_name(ctx: &GraphQLContext, name: String) -> FieldResult<User> {
+    fn user_by_name(ctx: &GraphQLContext, name: String) -> FieldResult<PublicUser> {
         Ok(Runtime::new()
             .unwrap()
             .block_on(get_user_by_name(Arc::clone(&ctx.pool), name))?)

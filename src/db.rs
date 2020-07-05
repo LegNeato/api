@@ -1,6 +1,6 @@
 // Postgres database management for Nest API
 
-use crate::schema::{NewPackage, NewPackageResult, NewPackageUpload, NewUser, Package, User};
+use crate::schema::{NewPackage, NewPackageResult, NewPackageUpload, NewUser, Package, PublicUser, User};
 use crate::utils::{create_api_key, first, normalize};
 use chrono::{DateTime, Utc};
 use dotenv;
@@ -68,7 +68,7 @@ pub async fn get_package(db: Arc<Client>, name: String) -> Result<Package, Strin
 }
 
 // Method to retrieve a user from db using name
-pub async fn get_user_by_name(db: Arc<Client>, name: String) -> Result<User, String> {
+pub async fn get_user_by_name(db: Arc<Client>, name: String) -> Result<PublicUser, String> {
     let rows = &db
         .query("SELECT * FROM users WHERE name = $1", &[&name])
         .await
@@ -77,12 +77,10 @@ pub async fn get_user_by_name(db: Arc<Client>, name: String) -> Result<User, Str
     if let Some(x) = _row {
         let row = _row.unwrap();
         let package_names: Array<String> = row.get(4);
-        Ok(User {
+        Ok(PublicUser {
             name: row.get(0),
             normalized_name: row.get(1),
-            api_key: "".to_string(),
             package_names: package_names.iter().cloned().collect(),
-            created_at: format!("{:?}", row.get::<usize, DateTime<Utc>>(5)),
         })
     } else {
         Err("Not found".to_string())
