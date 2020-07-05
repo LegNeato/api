@@ -1,0 +1,5 @@
+query Package {
+  package(name: "sass") {
+    name
+  }
+}

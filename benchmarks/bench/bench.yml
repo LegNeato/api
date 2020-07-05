@@ -1,0 +1,11 @@
+- name: packages
+  warmup_duration: 60
+  duration: 300
+  candidates:
+  - name: api-next
+    url: http://localhost:8080/graphql
+    query: Package
+    queries_file: queries.graphql
+  rps:
+  - 200
+  - 400
