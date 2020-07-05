@@ -51,8 +51,8 @@ async fn graphql(
 
 #[derive(serde::Deserialize, Debug)]
 pub struct Config {
-    pub apiKey: String,
-    pub packageName: String,
+    pub api_key: String,
+    pub package_name: String,
 }
 
 async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
@@ -63,7 +63,7 @@ async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
         let mime_type = field.content_type();
         println!("{}", mime_type.type_());
         let filename = content_type.get_filename();
-        let unqiueName = Uuid::new_v4().to_simple().to_string();
+        let unique_name = Uuid::new_v4().to_simple().to_string();
         let filepath = format!("tmp/{}", filename.unwrap_or("none"));
         // File::create is blocking operation, use threadpool
         let mut f = web::block(move || std::fs::File::create(Path::new(&filepath)))

@@ -14,18 +14,18 @@ use tokio::runtime::Runtime;
 #[graphql(description = "A nest.land package")]
 pub struct Package {
     pub name: String,
-    pub normalizedName: String,
+    pub normalized_name: String,
     pub owner: String,
     pub description: String,
     pub repository: String,
-    pub latestVersion: String,
-    pub latestStableVersion: String,
-    pub packageUploadNames: Vec<String>,
+    pub latest_version: String,
+    pub latest_stable_version: String,
+    pub package_upload_names: Vec<String>,
     pub locked: bool,
     pub malicious: bool,
     pub unlisted: bool,
-    pub updatedAt: String,
-    pub createdAt: String,
+    pub updated_at: String,
+    pub created_at: String,
 }
 
 // Define GraphQL schema for User retrival
@@ -33,10 +33,10 @@ pub struct Package {
 #[graphql(description = "A nest.land package author")]
 pub struct User {
     pub name: String,
-    pub normalizedName: String,
-    pub apiKey: String,
-    pub packageNames: Vec<String>,
-    pub createdAt: String,
+    pub normalized_name: String,
+    pub api_key: String,
+    pub package_names: Vec<String>,
+    pub created_at: String,
 }
 
 // Define graphql schema for NewPackage
@@ -44,7 +44,7 @@ pub struct User {
 #[graphql(description = "A nest.land package upload")]
 pub struct NewPackageUpload {
     pub name: String,
-    pub apiKey: String,
+    pub api_key: String,
     pub description: String,
     pub repository: String,
     pub upload: bool,
@@ -58,7 +58,7 @@ pub struct NewPackageUpload {
 #[graphql(description = "A nest.land package")]
 pub struct NewPackage {
     pub name: String,
-    pub apiKey: String,
+    pub api_key: String,
     pub description: String,
     pub repository: String,
     pub locked: bool,
@@ -91,10 +91,10 @@ impl QueryRoot {
             .unwrap()
             .block_on(get_package(Arc::clone(&ctx.pool), name))?)
     }
-    fn user(ctx: &GraphQLContext, apiKey: String) -> FieldResult<User> {
+    fn user(ctx: &GraphQLContext, api_key: String) -> FieldResult<User> {
         Ok(Runtime::new()
             .unwrap()
-            .block_on(get_user_by_key(Arc::clone(&ctx.pool), apiKey))?)
+            .block_on(get_user_by_key(Arc::clone(&ctx.pool), api_key))?)
     }
 }
 
