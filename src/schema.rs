@@ -44,6 +44,7 @@ pub struct PublicUser {
     pub name: String,
     pub normalized_name: String,
     pub package_names: Vec<String>,
+    pub created_at: String,
 }
 
 // Define graphql schema for NewPackage
