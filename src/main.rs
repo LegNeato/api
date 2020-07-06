@@ -10,8 +10,6 @@ use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
 use futures::{StreamExt, TryStreamExt};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
-use std::borrow::Borrow;
-use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
 use tokio_postgres::Client;
@@ -51,21 +49,21 @@ async fn graphql(
         .body(user))
 }
 
-// TODO: use this struct
-pub struct OngoingUpload {
-    packageName: String,
-    done: bool,
+#[derive(serde::Deserialize, Debug)]
+pub struct Config {
+    pub api_key: String,
+    pub package_name: String,
 }
 
 async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
     // iterate over multipart stream
-    let mut formValues = Vec::new();
+    let mut fields = String::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_type = field.content_disposition().unwrap();
         let mime_type = field.content_type();
         println!("{}", mime_type.type_());
         let filename = content_type.get_filename();
-        let unqiueName = Uuid::new_v4().to_simple().to_string();
+        let unique_name = Uuid::new_v4().to_simple().to_string();
         let filepath = format!("tmp/{}", filename.unwrap_or("none"));
         // File::create is blocking operation, use threadpool
         let mut f = web::block(move || std::fs::File::create(Path::new(&filepath)))
@@ -76,8 +74,7 @@ async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
             let data = chunk.unwrap();
             match filename {
                 None => {
-                    println!("{:?}", data);
-                    formValues.extend_from_slice(&data);
+                    fields = std::str::from_utf8(&data)?.to_string();
                 }
                 Some(n) => {
                     // filesystem operations are blocking, we have to use threadpool
@@ -86,7 +83,7 @@ async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
             }
         }
     }
-    let apiKey = formValues[0];
+    let cnf: Config = serde_json::from_str(&fields)?;
     Ok(HttpResponse::Ok().into())
 }
 
