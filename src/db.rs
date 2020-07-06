@@ -37,6 +37,35 @@ pub async fn connect() -> Result<Client, Error> {
     Ok(client)
 }
 
+// Method to retrieve all modules from db
+pub async fn get_modules(db: Arc<Client>) -> Result<Vec<Package>, String> {
+    let rows = &db
+        .query("SELECT * FROM packages", &[])
+        .await
+        .unwrap();
+    let mut modules: Vec<Package> = Vec::new();
+    for i in 0..rows.len() {
+        let row = &rows[i];
+        let upload_names: Array<String> = row.get(7);
+        modules.push(Package {
+            name: row.get(0),
+            normalized_name: row.get(1),
+            owner: row.get(2),
+            description: row.get(3),
+            repository: row.get(4),
+            latest_version: row.get(5),
+            latest_stable_version: row.get(6),
+            package_upload_names: upload_names.iter().cloned().collect(),
+            locked: row.get(8),
+            malicious: row.get(9),
+            unlisted: row.get(10),
+            updated_at: format!("{:?}", row.get::<usize, DateTime<Utc>>(11)),
+            created_at: format!("{:?}", row.get::<usize, DateTime<Utc>>(12)),
+        });
+    }
+    Ok(modules)
+}
+
 // Method to retrieve a package from db
 pub async fn get_package(db: Arc<Client>, name: String) -> Result<Package, String> {
     let rows = &db
