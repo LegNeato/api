@@ -24,7 +24,7 @@ mod utils;
 use crate::schema::{create_schema, Schema};
 
 async fn graphiql() -> HttpResponse {
-    let html = graphiql_source("http://127.0.0.1:8080/graphql");
+    let html = graphiql_source("http://127.0.0.1:8080/graphql", None);
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(html)
@@ -34,19 +34,19 @@ async fn graphql(
     st: web::Data<AppState>,
     data: web::Json<GraphQLRequest>,
 ) -> Result<HttpResponse, Error> {
-    let user = web::block(move || {
-        let res = data.execute(
+    let res = data.execute(
             &st.st,
             &context::GraphQLContext {
                 pool: Arc::clone(&st.pool),
             },
-        );
-        Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
-    })
-    .await?;
-    Ok(HttpResponse::Ok()
-        .content_type("application/json")
-        .body(user))
+        )
+    .await;
+    let gql_response = serde_json::to_string(&res)?;
+    let mut response = match res.is_ok() {
+        true => HttpResponse::Ok(),
+        false => HttpResponse::BadRequest(),
+    };
+    Ok(response.content_type("application/json").body(&gql_response))
 }
 
 #[derive(serde::Deserialize, Debug)]

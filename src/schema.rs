@@ -5,7 +5,7 @@ use crate::db::{
 };
 use juniper::FieldResult;
 use juniper::RootNode;
-use juniper::{GraphQLInputObject, GraphQLObject};
+use juniper::{GraphQLInputObject, GraphQLObject, EmptySubscription};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -92,7 +92,7 @@ pub struct NewPackageResult {
 pub struct QueryRoot;
 
 // Define QueryRoot for GraphQL
-#[juniper::object(Context = GraphQLContext)]
+#[juniper::graphql_object(Context = GraphQLContext)]
 impl QueryRoot {
     fn modules(ctx: &GraphQLContext) -> FieldResult<Vec<Package>> {
         Ok(Runtime::new()
@@ -119,7 +119,7 @@ impl QueryRoot {
 pub struct MutationRoot;
 
 // Define MutationRoot for GraphQL
-#[juniper::object(Context = GraphQLContext)]
+#[juniper::graphql_object(Context = GraphQLContext)]
 impl MutationRoot {
     fn create_user(ctx: &GraphQLContext, new_user: NewUser) -> FieldResult<User> {
         Ok(Runtime::new()
@@ -136,9 +136,9 @@ impl MutationRoot {
     }
 }
 
-pub type Schema = RootNode<'static, QueryRoot, MutationRoot>;
+pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription>;
 
 // Expose create schema method
 pub fn create_schema() -> Schema {
-    Schema::new(QueryRoot {}, MutationRoot {})
+    Schema::new(QueryRoot {}, MutationRoot {}, EmptySubscription::new())
 }
