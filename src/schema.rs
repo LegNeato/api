@@ -96,25 +96,17 @@ pub struct QueryRoot;
 // Define QueryRoot for GraphQL
 #[juniper::graphql_object(Context = GraphQLContext)]
 impl QueryRoot {
-    fn modules(ctx: &GraphQLContext) -> FieldResult<Vec<Package>> {
-        Ok(Runtime::new()
-            .unwrap()
-            .block_on(get_modules(Arc::clone(&ctx.pool)))?)
+    async fn modules(ctx: &GraphQLContext) -> FieldResult<Vec<Package>> {
+        Ok(get_modules(Arc::clone(&ctx.pool)).await?)
     }
-    fn package(ctx: &GraphQLContext, name: String) -> FieldResult<Package> {
-        Ok(Runtime::new()
-            .unwrap()
-            .block_on(get_package(Arc::clone(&ctx.pool), name))?)
+    async fn package(ctx: &GraphQLContext, name: String) -> FieldResult<Package> {
+        Ok(get_package(Arc::clone(&ctx.pool), name).await?)
     }
-    fn user_by_name(ctx: &GraphQLContext, name: String) -> FieldResult<PublicUser> {
-        Ok(Runtime::new()
-            .unwrap()
-            .block_on(get_user_by_name(Arc::clone(&ctx.pool), name))?)
+    async fn user_by_name(ctx: &GraphQLContext, name: String) -> FieldResult<PublicUser> {
+        Ok(get_user_by_name(Arc::clone(&ctx.pool), name).await?)
     }
-    fn user(ctx: &GraphQLContext, api_key: String) -> FieldResult<User> {
-        Ok(Runtime::new()
-            .unwrap()
-            .block_on(get_user_by_key(Arc::clone(&ctx.pool), api_key))?)
+    async fn user(ctx: &GraphQLContext, api_key: String) -> FieldResult<User> {
+        Ok(get_user_by_key(Arc::clone(&ctx.pool), api_key).await?)
     }
 }
 
@@ -123,18 +115,14 @@ pub struct MutationRoot;
 // Define MutationRoot for GraphQL
 #[juniper::graphql_object(Context = GraphQLContext)]
 impl MutationRoot {
-    fn create_user(ctx: &GraphQLContext, new_user: NewUser) -> FieldResult<User> {
-        Ok(Runtime::new()
-            .unwrap()
-            .block_on(create_user(Arc::clone(&ctx.pool), new_user))?)
+    async fn create_user(ctx: &GraphQLContext, new_user: NewUser) -> FieldResult<User> {
+        Ok(create_user(Arc::clone(&ctx.pool), new_user).await?)
     }
-    fn create_package(
+    async fn create_package(
         ctx: &GraphQLContext,
         new_package: NewPackage,
     ) -> FieldResult<NewPackageResult> {
-        Ok(Runtime::new()
-            .unwrap()
-            .block_on(publish_package(Arc::clone(&ctx.pool), new_package))?)
+        Ok(publish_package(Arc::clone(&ctx.pool), new_package).await?)
     }
 }
 
