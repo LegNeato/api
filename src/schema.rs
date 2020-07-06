@@ -1,7 +1,7 @@
 //! Juniper GraphQL handling done here
 use crate::context::GraphQLContext;
 use crate::db::{
-    create_user, get_modules, get_package, get_user_by_key, publish_package,
+    create_user, get_modules, get_package, get_user_by_key, publish_package, get_user_by_name,
 };
 use juniper::FieldResult;
 use juniper::RootNode;
@@ -35,6 +35,14 @@ pub struct User {
     pub name: String,
     pub normalized_name: String,
     pub api_key: String,
+    pub package_names: Vec<String>,
+    pub created_at: String,
+}
+#[derive(GraphQLObject)]
+#[graphql(description = "A nest.land package author [restricted]")]
+pub struct PublicUser {
+    pub name: String,
+    pub normalized_name: String,
     pub package_names: Vec<String>,
     pub created_at: String,
 }
@@ -95,6 +103,11 @@ impl QueryRoot {
         Ok(Runtime::new()
             .unwrap()
             .block_on(get_package(Arc::clone(&ctx.pool), name))?)
+    }
+    fn user_by_name(ctx: &GraphQLContext, name: String) -> FieldResult<PublicUser> {
+        Ok(Runtime::new()
+            .unwrap()
+            .block_on(get_user_by_name(Arc::clone(&ctx.pool), name))?)
     }
     fn user(ctx: &GraphQLContext, api_key: String) -> FieldResult<User> {
         Ok(Runtime::new()
