@@ -34,11 +34,12 @@ async fn graphql(
     st: web::Data<AppState>,
     data: web::Json<GraphQLRequest>,
 ) -> Result<HttpResponse, Error> {
+    let ctx = &context::GraphQLContext {
+        pool: Arc::clone(&st.pool),
+    };
     let res = data.execute(
             &st.st,
-            &context::GraphQLContext {
-                pool: Arc::clone(&st.pool),
-            },
+            ctx,
         )
     .await;
     let gql_response = serde_json::to_string(&res)?;

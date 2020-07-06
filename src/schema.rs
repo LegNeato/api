@@ -5,9 +5,11 @@ use crate::db::{
 };
 use juniper::FieldResult;
 use juniper::RootNode;
-use juniper::{GraphQLInputObject, GraphQLObject, EmptySubscription};
+use juniper::{GraphQLInputObject, GraphQLObject, EmptySubscription, FieldError};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
+use futures::{Stream, StreamExt};
+use std::pin::Pin;
 
 // Define GraphQL schema for package retrival
 #[derive(GraphQLObject)]
@@ -136,9 +138,24 @@ impl MutationRoot {
     }
 }
 
-pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription>;
+pub struct Subscription;
+
+type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
+
+#[juniper::graphql_subscription(Context = GraphQLContext)]
+impl Subscription {
+    async fn hello_world() -> StringStream {
+        let stream = tokio::stream::iter(vec![
+            Ok(String::from("Hello")),
+            Ok(String::from("World!"))
+        ]);
+        Box::pin(stream)
+    }
+}
+
+pub type Schema = RootNode<'static, QueryRoot, MutationRoot, Subscription>;
 
 // Expose create schema method
 pub fn create_schema() -> Schema {
-    Schema::new(QueryRoot {}, MutationRoot {}, EmptySubscription::new())
+    Schema::new(QueryRoot {}, MutationRoot {}, Subscription {})
 }
