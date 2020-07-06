@@ -77,7 +77,7 @@ async fn upload_package(mut payload: Multipart) -> Result<HttpResponse, Error> {
                 None => {
                     fields = std::str::from_utf8(&data)?.to_string();
                 }
-                Some(n) => {
+                Some(_) => {
                     // filesystem operations are blocking, we have to use threadpool
                     f = web::block(move || f.write_all(&data).map(|_| f)).await?;
                 }

@@ -1,7 +1,7 @@
 //! Juniper GraphQL handling done here
 use crate::context::GraphQLContext;
 use crate::db::{
-    create_user, get_modules, get_package, get_user_by_key, publish_package, get_user_by_name,
+    create_user, get_modules, get_package, get_users, get_user_by_key, publish_package, get_user_by_name,
 };
 use juniper::FieldResult;
 use juniper::RootNode;
@@ -104,6 +104,9 @@ impl QueryRoot {
     }
     async fn user_by_name(ctx: &GraphQLContext, name: String) -> FieldResult<PublicUser> {
         Ok(get_user_by_name(Arc::clone(&ctx.pool), name).await?)
+    }
+    fn users(ctx: &GraphQLContext) -> FieldResult<Vec<PublicUser>> {
+        Ok(get_users(Arc::clone(&ctx.pool)).await?)
     }
     async fn user(ctx: &GraphQLContext, api_key: String) -> FieldResult<User> {
         Ok(get_user_by_key(Arc::clone(&ctx.pool), api_key).await?)
