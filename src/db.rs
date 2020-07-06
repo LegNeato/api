@@ -73,7 +73,7 @@ pub async fn get_package(db: Arc<Client>, name: String) -> Result<Package, Strin
         .await
         .unwrap();
     let _row = first(rows);
-    if let Some(x) = _row {
+    if let Some(_) = _row {
         let row = _row.unwrap();
         let upload_names: Array<String> = row.get(7);
         Ok(Package {
@@ -123,7 +123,7 @@ pub async fn get_user_by_name(db: Arc<Client>, name: String) -> Result<PublicUse
         .await
         .unwrap();
     let _row = first(rows);
-    if let Some(x) = _row {
+    if let Some(_) = _row {
         let row = _row.unwrap();
         let package_names: Array<String> = row.get(4);
         Ok(PublicUser {
@@ -144,7 +144,7 @@ pub async fn get_user_by_key(db: Arc<Client>, api_key: String) -> Result<User, S
         .await
         .unwrap();
     let _row = first(rows);
-    if let Some(x) = _row {
+    if let Some(_) = _row {
         let row = _row.unwrap();
         let package_names: Array<String> = row.get(4);
         Ok(User {
@@ -164,7 +164,7 @@ pub async fn create_user(db: Arc<Client>, new_user: NewUser) -> Result<User, Err
     let api_key = create_api_key();
     let curr_time = Utc::now();
     let normalized_name = normalize(&new_user.name);
-    let rows = &db
+    let _ = &db
         .query("INSERT INTO users (name, normalizedName, password, apiKey, packageNames, createdAt) VALUES ($1, $2, $3, $4, $5, $6)", &[&new_user.name, &normalized_name, &new_user.password, &api_key, &Array::<String>::from_vec(vec![], 0), &curr_time])
         .await?;
     let name = new_user.name;
