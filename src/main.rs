@@ -8,8 +8,10 @@ use actix_cors::Cors;
 use actix_multipart::Multipart;
 use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
 use futures::{StreamExt, TryStreamExt};
-use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
+use juniper_actix::{
+    graphiql_handler as gqli_handler, graphql_handler, playground_handler as play_handler,
+};
 use std::io::Write;
 use std::path::Path;
 use tokio_postgres::Client;
@@ -23,31 +25,23 @@ mod utils;
 
 use crate::schema::{create_schema, Schema};
 
-async fn graphiql() -> HttpResponse {
-    let html = graphiql_source("http://127.0.0.1:8080/graphql", None);
-    HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(html)
+async fn graphiql_handler() -> Result<HttpResponse, Error> {
+    gqli_handler("/", None).await
+}
+
+async fn playground_handler() -> Result<HttpResponse, Error> {
+    play_handler("/", None).await
 }
 
 async fn graphql(
     st: web::Data<AppState>,
-    data: web::Json<GraphQLRequest>,
+    req: actix_web::HttpRequest,
+    payload: actix_web::web::Payload,
 ) -> Result<HttpResponse, Error> {
     let ctx = &context::GraphQLContext {
         pool: Arc::clone(&st.pool),
     };
-    let res = data.execute(
-            &st.st,
-            ctx,
-        )
-    .await;
-    let gql_response = serde_json::to_string(&res)?;
-    let mut response = match res.is_ok() {
-        true => HttpResponse::Ok(),
-        false => HttpResponse::BadRequest(),
-    };
-    Ok(response.content_type("application/json").body(&gql_response))
+    graphql_handler(&st.as_ref().st, &ctx, req, payload).await
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -118,8 +112,13 @@ async fn main() -> io::Result<()> {
             })
             .wrap(middleware::Logger::default())
             .service(web::resource("/").route(web::get().to(index)))
-            .service(web::resource("/graphql").route(web::post().to(graphql)))
-            .service(web::resource("/graphiql").route(web::get().to(graphiql)))
+            .service(
+                web::resource("/graphql")
+                    .route(web::post().to(graphql))
+                    .route(web::get().to(graphql)),
+            )
+            .service(web::resource("/playground").route(web::get().to(playground_handler)))
+            .service(web::resource("/graphiql").route(web::get().to(graphiql_handler)))
             .service(web::resource("/package").route(web::post().to(upload_package)))
     })
     .bind("127.0.0.1:8080")?

@@ -129,24 +129,9 @@ impl MutationRoot {
     }
 }
 
-pub struct Subscription;
-
-type StringStream = Pin<Box<dyn Stream<Item = Result<String, FieldError>> + Send>>;
-
-#[juniper::graphql_subscription(Context = GraphQLContext)]
-impl Subscription {
-    async fn hello_world() -> StringStream {
-        let stream = tokio::stream::iter(vec![
-            Ok(String::from("Hello")),
-            Ok(String::from("World!"))
-        ]);
-        Box::pin(stream)
-    }
-}
-
-pub type Schema = RootNode<'static, QueryRoot, MutationRoot, Subscription>;
+pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<GraphQLContext>>;
 
 // Expose create schema method
 pub fn create_schema() -> Schema {
-    Schema::new(QueryRoot {}, MutationRoot {}, Subscription {})
+    Schema::new(QueryRoot {}, MutationRoot {}, EmptySubscription::<GraphQLContext>::new())
 }
