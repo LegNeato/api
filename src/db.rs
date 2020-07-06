@@ -96,6 +96,26 @@ pub async fn get_package(db: Arc<Client>, name: String) -> Result<Package, Strin
     }
 }
 
+// Method to retrieve all users from db
+pub async fn get_users(db: Arc<Client>) -> Result<Vec<PublicUser>, String> {
+    let rows = &db
+        .query("SELECT * FROM users", &[])
+        .await
+        .unwrap();
+    let mut users: Vec<PublicUser> = Vec::new();
+    for i in 0..rows.len() {
+        let row = &rows[i];
+        let package_names: Array<String> = row.get(4);
+        users.push(PublicUser {
+            name: row.get(0),
+            normalized_name: row.get(1),
+            package_names: package_names.iter().cloned().collect(),
+            created_at: format!("{:?}", row.get::<usize, DateTime<Utc>>(5)),
+        });
+    }
+    Ok(users)
+}
+
 // Method to retrieve a user from db using name
 pub async fn get_user_by_name(db: Arc<Client>, name: String) -> Result<PublicUser, String> {
     let rows = &db
