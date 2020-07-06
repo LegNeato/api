@@ -110,6 +110,7 @@ pub async fn get_user_by_name(db: Arc<Client>, name: String) -> Result<PublicUse
             name: row.get(0),
             normalized_name: row.get(1),
             package_names: package_names.iter().cloned().collect(),
+            created_at: format!("{:?}", row.get::<usize, DateTime<Utc>>(5)),
         })
     } else {
         Err("Not found".to_string())
