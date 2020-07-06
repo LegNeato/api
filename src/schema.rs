@@ -1,7 +1,7 @@
 //! Juniper GraphQL handling done here
 use crate::context::GraphQLContext;
 use crate::db::{
-    create_user, get_package, get_user_by_key, publish_package,
+    create_user, get_modules, get_package, get_user_by_key, publish_package,
 };
 use juniper::FieldResult;
 use juniper::RootNode;
@@ -86,6 +86,11 @@ pub struct QueryRoot;
 // Define QueryRoot for GraphQL
 #[juniper::object(Context = GraphQLContext)]
 impl QueryRoot {
+    fn modules(ctx: &GraphQLContext) -> FieldResult<Vec<Package>> {
+        Ok(Runtime::new()
+            .unwrap()
+            .block_on(get_modules(Arc::clone(&ctx.pool)))?)
+    }
     fn package(ctx: &GraphQLContext, name: String) -> FieldResult<Package> {
         Ok(Runtime::new()
             .unwrap()
